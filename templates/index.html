@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Plankton Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta http-equiv="refresh" content="10"> <!-- full page reload every 10s -->
+</head>
+<body>
+    <h2>Live Plankton Detection</h2>
+
+    <!-- Time Series Chart -->
+    <canvas id="timeSeriesChart" width="800" height="400"></canvas>
+
+    <!-- Species Counts + Biomass Table -->
+    <h3>Species Counts & Biomass</h3>
+    <table border="1" cellpadding="5" id="speciesTable">
+        <thead>
+            <tr>
+                <th>Species</th>
+                <th>Count</th>
+                <th>Biomass (mgC)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+  <script>
+    const ctx = document.getElementById('timeSeriesChart').getContext('2d');
+    const timeSeriesChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Cumulative Count' } },
+                x: { title: { display: true, text: 'Time' } }
+            }
+        }
+    });
+
+    async function fetchTimeSeries() {
+        const response = await fetch('/timeseries');
+        const data = await response.json();
+
+        if (!data.length) return;
+
+        // Group species over time
+        const speciesGroups = {};
+        const allTimestamps = [...new Set(data.map(row => row.timestamp))].sort();
+
+        data.forEach(row => {
+            const sp = row.species || "Unknown";
+            if (!speciesGroups[sp]) {
+                speciesGroups[sp] = {};
+            }
+            speciesGroups[sp][row.timestamp] = (speciesGroups[sp][row.timestamp] || 0) + 1;
+        });
+
+        // Build datasets with cumulative counts
+        const datasets = Object.keys(speciesGroups).map((sp, i) => {
+            let cumulative = 0;
+            const values = allTimestamps.map(ts => {
+                cumulative += (speciesGroups[sp][ts] || 0);
+                return cumulative;
+            });
+            return {
+                label: sp,
+                data: values,
+                borderColor: `hsl(${i * 50}, 70%, 50%)`,
+                fill: false
+            };
+        });
+
+        timeSeriesChart.data.labels = allTimestamps;
+        timeSeriesChart.data.datasets = datasets;
+        timeSeriesChart.update();
+    }
+
+    async function fetchSpeciesCounts() {
+        const response = await fetch('/species_counts');
+        const data = await response.json();
+        const tbody = document.getElementById('speciesTable').querySelector('tbody');
+        tbody.innerHTML = "";
+        data.forEach(row => {
+            const sp = row.species || "Unknown";
+            const count = row.count || 0;
+            const biomass = (row.biomass_mgC !== undefined && !isNaN(row.biomass_mgC))
+                ? row.biomass_mgC.toFixed(3)
+                : "0.000";
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${sp}</td><td>${count}</td><td>${biomass}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    fetchTimeSeries();
+    fetchSpeciesCounts();
+</script>
+</body>
+</html>
