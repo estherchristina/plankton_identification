@@ -1,5 +1,5 @@
 # Hierarchical Plankton Identification, Correction, and Biomass Estimation Pipeline
-This repository contains a **machine learning–based pipeline** for automated plankton identification from **microscopic imagery** and **biomass estimation**, with results visualized through a **real-time Flask web interface**.
+This repository contains a **machine learning based pipeline** for automated plankton identification from **microscopic imagery** and **biomass estimation**, with results visualized through a **real time Flask web interface**.
 The system is designed for **marine and aquatic monitoring**, with future extensibility toward population dynamics analysis and early-warning systems.
 ## Overview
 The pipeline performs the following steps:
@@ -14,7 +14,7 @@ To address severe class imbalance typical of plankton datasets:
 - Very small classes (< 100 images) were removed
 - Dominant classes were capped to prevent bias
 - Underrepresented classes were oversampled up to ~5,000 samples
-Oversampling was performed using **on-the-fly random augmentation** (via Pillow) during data loading, ensuring:
+Oversampling was performed using **random augmentation** (via Pillow) during data loading, ensuring:
 - No duplication of stored images
 - Reduced risk of memorization
 - Improved generalization
@@ -27,9 +27,9 @@ No unified taxonomy descriptor was initially available. Taxonomic labels were cu
 Special handling included:
 - Infraorders or missing families labeled as name_uk
 - Cases such as Cladoceromorpha (infraorder, not family) handled explicitly
-Due to taxonomy completeness and reliability, **family-level classification** was prioritized initially, with future expansion to finer taxonomic levels.
+Due to taxonomy completeness and reliability, **family level classification** was prioritized initially, with future expansion to finer taxonomic levels.
 ## Dataset Representation
-The dataset is managed using a **CSV-based addressing system**:
+The dataset is managed using a **CSV based addressing system**:
 - The CSV file stores image paths and labels
 - Images are accessed directly from disk at runtime
 - No symlinks or redundant copying are used
@@ -37,9 +37,9 @@ The dataset is managed using a **CSV-based addressing system**:
 # Model Architecture
 ## Hierarchical CNN (Multi-Task Learning)
 A **single CNN** with a shared backbone is used, producing **three outputs in parallel**:
-1. Order-level classifier
-2. Family-level classifier
-3. Species-level classifier
+1. Order level classifier
+2. Family level classifier
+3. Species level classifier
 ### Key characteristics:
 - One input image → three predictions simultaneously
 - **Hierarchical multi-task loss**
@@ -65,9 +65,9 @@ Model evaluation is performed using a dedicated evaluation script on a held-out 
 - - Served to the Flask dashboard
 - Dashboard updates:
 - - Cleaned data every ~5 seconds
-- - Time-series plots every ~10 seconds
+- - Time series plots every ~10 seconds
 ## Biomass Estimation
-Species-specific **carbon conversion factors (µg C per individual)** are applied to cleaned species counts to compute:
+Species specific **carbon conversion factors (µg C per individual)** are applied to cleaned species counts to compute:
 - Biomass (mg C)  
 This enables ecological interpretation beyond simple classification.
 ## Deployment Notes
